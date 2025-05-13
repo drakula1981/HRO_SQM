@@ -14,7 +14,7 @@
 
 class EEPROMSensor {
 private:
-    const float tempCalOffsetDefault = -2.0;
+    const float tempCalOffsetDefault = 0.0;
     const float sqmCalOffsetDefault = 0.0;
 public:
     // Initialiser l'EEPROM

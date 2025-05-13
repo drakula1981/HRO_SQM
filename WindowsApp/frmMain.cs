@@ -129,10 +129,30 @@ namespace WindowsApp {
         private async Task UpdateDatas() {
             var cdatas = await CloudCoverDatas.GetCloudCoverDatasAsync(txtConfigHost.Text);
             var wdatas = await WeatherDatas.GetWeatherDatasAsync(txtConfigHost.Text);
+            var sdatas = await SkyBrightnessDatas.GetSkyBrightnessDatasAsync(txtConfigHost.Text);
 
             lblTempData.Text = $"{wdatas?.Temperature:n2}";
             lblHumData.Text = $"{wdatas?.Humidity:n0}";
             lblPressData.Text = $"{wdatas?.Pressure:n0}";
+            lblSkyTempData.Text = $"{cdatas?.SkyTemperature:n2}";
+            lblCloudCoverData.Text = $"{cdatas?.PercentCoverture:n0}";
+            if (cdatas?.PercentCoverture <= 10) {
+                ipbCloudCover.ForeColor = Color.Green;
+                ipbCloudCover.IconChar = FontAwesome.Sharp.IconChar.Moon;
+            } else if (cdatas?.PercentCoverture > 10 && cdatas?.PercentCoverture <= 50) {
+                ipbCloudCover.ForeColor = Color.Orange;
+                ipbCloudCover.IconChar = FontAwesome.Sharp.IconChar.CloudMoon;
+            } else {
+                ipbCloudCover.ForeColor = Color.Red;
+                ipbCloudCover.IconChar = FontAwesome.Sharp.IconChar.Cloud;
+            }
+            lblSqmDatas.Text = $"{sdatas?.Mpsas:n2}";
+            lblFullLumDatas.Text = $"{sdatas?.FullLuminosity:n0}";
+            lblIrDatas.Text = $"{sdatas?.InfraredLuminosity:n0}";
+            lblVisibleDatas.Text = $"{sdatas?.VisibleLuminosity:n0}";
+            lblDmpsasDatas.Text = $"{sdatas?.Dmpsas:n2}";
+            lblExpDatas.Text = $"{sdatas?.IntegrationValue:n0}/{sdatas?.GainValue:n0}/{sdatas?.Niter:n0}";
+            lblBortleClassDatas.Text = $"{sdatas?.BortleClass}";
         }
     }
 }

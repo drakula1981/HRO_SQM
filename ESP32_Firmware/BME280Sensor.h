@@ -11,7 +11,9 @@ private:
     Adafruit_BME280 bme;
     SensorStatus status;
 
-    const float HumCoef = 1;//10.409090909;
+    const float HumCoef = 2.025;//10.409090909;
+    const float PressCoef = 1.016080402;
+
 public:
     BME280Sensor(); // Constructeur
 

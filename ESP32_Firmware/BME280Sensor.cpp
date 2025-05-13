@@ -37,11 +37,11 @@ float BME280Sensor::getTemperature(float cloudSensorTemp, float tempOffset) {
 }
 
 float BME280Sensor::getPressure() {
-    return (status == Connected) ? bme.readPressure() / 100.0F : -42.0; // Converti en hPa
+    return (status == Connected) ? (bme.readPressure()*PressCoef) / 100.0F : -42.0; // Converti en hPa
 }
 
 float BME280Sensor::getHumidity() {
-    return (status == Connected) ? bme.readHumidity()/HumCoef : -42.0;
+    return (status == Connected) ? bme.readHumidity()*HumCoef : -42.0;
 }
 
 float BME280Sensor::getAltitude(float seaLevelPressure) {

@@ -13,7 +13,7 @@
 #include "EEPROMSensor.h"
 #include "WiFiManager.h"
 #include "ArduinoJWT.h"
-#include "MAX17048Sensor.h"
+#include "LC709203FSensor.h"
 
 const char *secret = JWT_SECRET;
 const char *root_ca =
@@ -56,9 +56,9 @@ BME280Sensor bmeSensor;
 TSL2591Sensor tslSensor;
 EEPROMSensor eepromSensor;
 WiFiManager wifiManager;
-MAX17048Sensor battSensor;
+LC709203FSensor battSensor;
 
-StaticJsonDocument<400> getSensorsStatus(BME280Sensor &bme, TSL2591Sensor &tsl, MLX90614Sensor &mlx, MAX17048Sensor &batt) {
+StaticJsonDocument<400> getSensorsStatus(BME280Sensor &bme, TSL2591Sensor &tsl, MLX90614Sensor &mlx, LC709203FSensor &batt) {
   StaticJsonDocument<400> doc;
 
   // Inclure les statuts des capteurs
@@ -100,13 +100,13 @@ StaticJsonDocument<400> getSensorsStatus(BME280Sensor &bme, TSL2591Sensor &tsl, 
 
   switch (batt.getStatus()) {
     case Connected:
-      doc["MAX17048"] = "Connected";
+      doc["LC709203F"] = "Connected";
       break;
     case Disconnected:
-      doc["MAX17048"] = "Disconnected";
+      doc["LC709203F"] = "Disconnected";
       break;
     case Error:
-      doc["MAX17048"] = "Error";
+      doc["LC709203F"] = "Error";
       break;
   }
 
@@ -159,7 +159,8 @@ bool verifyJWT(String token) {
 // Setup du serveur
 void setup() {
   Serial.begin(SERIAL_BAUD);
-
+  while(Serial);
+  Serial.println("Intialisation...");
   // Charger le certificat CA
   //secureClient.setCACert(root_ca);
   // Initialisation WiFi
@@ -177,7 +178,6 @@ void setup() {
   // Initialisation Manager batterie
   battSensor.begin();
 
-  Serial.println("Connexion au serveur NTP...");
   configTime(0, 0, "pool.ntp.org", "time.nist.gov");
   delay(2000);  // Attente pour la synchronisation initiale
   Serial.println("Connecté au serveur NTP...");
