@@ -3,7 +3,7 @@
 namespace WindowsApp.Model {
     internal class CloudCoverDatas : ModelBase<CloudCoverDatas> {
         private static readonly HttpClient HttpClient = new() {
-            Timeout = TimeSpan.FromSeconds(5)
+            Timeout = TimeSpan.FromSeconds(10)
         };
         //{"timestamp":"2025-05-05 22:19:53","ambient":24.63,"sky":10.44999,"cloudCoverture":100}
         [JsonProperty("timestamp")] public DateTime TimeStamp { get; private set; }

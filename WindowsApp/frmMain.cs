@@ -127,9 +127,11 @@ namespace WindowsApp {
         }
 
         private async Task UpdateDatas() {
-            var cdatas = await CloudCoverDatas.GetCloudCoverDatasAsync(txtConfigHost.Text);
-            var wdatas = await WeatherDatas.GetWeatherDatasAsync(txtConfigHost.Text);
-            var sdatas = await SkyBrightnessDatas.GetSkyBrightnessDatasAsync(txtConfigHost.Text);
+            CloudCoverDatas? cdatas = await CloudCoverDatas.GetCloudCoverDatasAsync(txtConfigHost.Text);
+            await Task.Delay(1000);
+            WeatherDatas? wdatas = await WeatherDatas.GetWeatherDatasAsync(txtConfigHost.Text);
+            await Task.Delay(1000);
+            SkyBrightnessDatas? sdatas = await SkyBrightnessDatas.GetSkyBrightnessDatasAsync(txtConfigHost.Text);
 
             lblTempData.Text = $"{wdatas?.Temperature:n2}";
             lblHumData.Text = $"{wdatas?.Humidity:n0}";
@@ -153,6 +155,12 @@ namespace WindowsApp {
             lblDmpsasDatas.Text = $"{sdatas?.Dmpsas:n2}";
             lblExpDatas.Text = $"{sdatas?.IntegrationValue:n0}/{sdatas?.GainValue:n0}/{sdatas?.Niter:n0}";
             lblBortleClassDatas.Text = $"{sdatas?.BortleClass}";
+        }
+
+        private void nudRefreshFreq_ValueChanged(object sender, EventArgs e) {
+            tRetrieveDatas.Stop();
+            tRetrieveDatas.Interval = (int)nudRefreshFreq.Value * 1000;
+            tRetrieveDatas.Start();
         }
     }
 }

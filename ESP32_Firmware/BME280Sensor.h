@@ -10,6 +10,7 @@ class BME280Sensor {
 private:
     Adafruit_BME280 bme;
     SensorStatus status;
+    const uint8_t nbMesures = 10;
 
     const float HumCoef = 2.025;//10.409090909;
     const float PressCoef = 1.016080402;

@@ -30,9 +30,11 @@
             components = new System.ComponentModel.Container();
             tcConfig = new TabControl();
             tDatas = new TabPage();
-            gpSkyBrightness = new GroupBox();
-            lblExpDatas = new Label();
             lblExpDatasLabel = new Label();
+            gpSkyBrightness = new GroupBox();
+            lblBortleClassDatas = new Label();
+            lblBortleClassLabel = new Label();
+            lblExpDatas = new Label();
             lblDmpsasDatas = new Label();
             lblDmpsasLabel = new Label();
             lblVisibleDatas = new Label();
@@ -93,8 +95,9 @@
             btnConfigScan = new Button();
             txtConfigHost = new TextBox();
             tRetrieveDatas = new System.Windows.Forms.Timer(components);
-            lblBortleClassLabel = new Label();
-            lblBortleClassDatas = new Label();
+            label1 = new Label();
+            nudRefreshFreq = new NumericUpDown();
+            label2 = new Label();
             tcConfig.SuspendLayout();
             tDatas.SuspendLayout();
             gpSkyBrightness.SuspendLayout();
@@ -113,6 +116,7 @@
             ((System.ComponentModel.ISupportInitialize)ipbConfigSensorSttEnv).BeginInit();
             ((System.ComponentModel.ISupportInitialize)ipbConfigSensorSttSqm).BeginInit();
             ((System.ComponentModel.ISupportInitialize)ipbConfigSensorSttCloud).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)nudRefreshFreq).BeginInit();
             SuspendLayout();
             // 
             // tcConfig
@@ -142,6 +146,17 @@
             tDatas.Text = "Données";
             tDatas.UseVisualStyleBackColor = true;
             // 
+            // lblExpDatasLabel
+            // 
+            lblExpDatasLabel.ImageAlign = ContentAlignment.MiddleLeft;
+            lblExpDatasLabel.Location = new Point(439, 131);
+            lblExpDatasLabel.Margin = new Padding(1, 0, 1, 0);
+            lblExpDatasLabel.Name = "lblExpDatasLabel";
+            lblExpDatasLabel.Size = new Size(102, 15);
+            lblExpDatasLabel.TabIndex = 21;
+            lblExpDatasLabel.Text = "Exp/Gain/Nb Iter :";
+            lblExpDatasLabel.TextAlign = ContentAlignment.MiddleLeft;
+            // 
             // gpSkyBrightness
             // 
             gpSkyBrightness.Controls.Add(lblBortleClassDatas);
@@ -165,6 +180,28 @@
             gpSkyBrightness.TabStop = false;
             gpSkyBrightness.Text = "Qualité du ciel";
             // 
+            // lblBortleClassDatas
+            // 
+            lblBortleClassDatas.Font = new Font("Cambria", 22F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            lblBortleClassDatas.Location = new Point(67, 60);
+            lblBortleClassDatas.Margin = new Padding(1, 0, 1, 0);
+            lblBortleClassDatas.Name = "lblBortleClassDatas";
+            lblBortleClassDatas.Size = new Size(66, 33);
+            lblBortleClassDatas.TabIndex = 24;
+            lblBortleClassDatas.Text = "0";
+            lblBortleClassDatas.TextAlign = ContentAlignment.MiddleRight;
+            // 
+            // lblBortleClassLabel
+            // 
+            lblBortleClassLabel.Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            lblBortleClassLabel.Location = new Point(13, 68);
+            lblBortleClassLabel.Margin = new Padding(1, 0, 1, 0);
+            lblBortleClassLabel.Name = "lblBortleClassLabel";
+            lblBortleClassLabel.Size = new Size(51, 22);
+            lblBortleClassLabel.TabIndex = 23;
+            lblBortleClassLabel.Text = "Bortle";
+            lblBortleClassLabel.TextAlign = ContentAlignment.MiddleLeft;
+            // 
             // lblExpDatas
             // 
             lblExpDatas.Font = new Font("Cambria", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
@@ -175,17 +212,6 @@
             lblExpDatas.TabIndex = 22;
             lblExpDatas.Text = "0.00";
             lblExpDatas.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // lblExpDatasLabel
-            // 
-            lblExpDatasLabel.ImageAlign = ContentAlignment.MiddleLeft;
-            lblExpDatasLabel.Location = new Point(439, 131);
-            lblExpDatasLabel.Margin = new Padding(1, 0, 1, 0);
-            lblExpDatasLabel.Name = "lblExpDatasLabel";
-            lblExpDatasLabel.Size = new Size(102, 15);
-            lblExpDatasLabel.TabIndex = 21;
-            lblExpDatasLabel.Text = "Exp/Gain/Nb Iter :";
-            lblExpDatasLabel.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // lblDmpsasDatas
             // 
@@ -570,6 +596,9 @@
             // 
             // tConfig
             // 
+            tConfig.Controls.Add(label2);
+            tConfig.Controls.Add(nudRefreshFreq);
+            tConfig.Controls.Add(label1);
             tConfig.Controls.Add(gpCalibrationDatas);
             tConfig.Controls.Add(SttStripMain);
             tConfig.Controls.Add(gpConfigHostDatas);
@@ -590,11 +619,11 @@
             // 
             gpCalibrationDatas.Controls.Add(btnUploadCal);
             gpCalibrationDatas.Controls.Add(btnDownloadCal);
-            gpCalibrationDatas.Location = new Point(21, 189);
+            gpCalibrationDatas.Location = new Point(21, 213);
             gpCalibrationDatas.Margin = new Padding(1);
             gpCalibrationDatas.Name = "gpCalibrationDatas";
             gpCalibrationDatas.Padding = new Padding(1);
-            gpCalibrationDatas.Size = new Size(534, 91);
+            gpCalibrationDatas.Size = new Size(534, 67);
             gpCalibrationDatas.TabIndex = 9;
             gpCalibrationDatas.TabStop = false;
             gpCalibrationDatas.Text = "Calibration";
@@ -870,29 +899,36 @@
             // 
             // tRetrieveDatas
             // 
-            tRetrieveDatas.Interval = 5000;
+            tRetrieveDatas.Interval = 10000;
             // 
-            // lblBortleClassLabel
+            // label1
             // 
-            lblBortleClassLabel.Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            lblBortleClassLabel.Location = new Point(13, 68);
-            lblBortleClassLabel.Margin = new Padding(1, 0, 1, 0);
-            lblBortleClassLabel.Name = "lblBortleClassLabel";
-            lblBortleClassLabel.Size = new Size(51, 22);
-            lblBortleClassLabel.TabIndex = 23;
-            lblBortleClassLabel.Text = "Bortle";
-            lblBortleClassLabel.TextAlign = ContentAlignment.MiddleLeft;
+            label1.AutoSize = true;
+            label1.Location = new Point(21, 197);
+            label1.Name = "label1";
+            label1.Size = new Size(161, 15);
+            label1.TabIndex = 10;
+            label1.Text = "Fréquence Rafraichissement :";
             // 
-            // lblBortleClassDatas
+            // nudRefreshFreq
             // 
-            lblBortleClassDatas.Font = new Font("Cambria", 22F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            lblBortleClassDatas.Location = new Point(67, 60);
-            lblBortleClassDatas.Margin = new Padding(1, 0, 1, 0);
-            lblBortleClassDatas.Name = "lblBortleClassDatas";
-            lblBortleClassDatas.Size = new Size(66, 33);
-            lblBortleClassDatas.TabIndex = 24;
-            lblBortleClassDatas.Text = "0";
-            lblBortleClassDatas.TextAlign = ContentAlignment.MiddleRight;
+            nudRefreshFreq.Location = new Point(188, 195);
+            nudRefreshFreq.Maximum = new decimal(new int[] { 60, 0, 0, 0 });
+            nudRefreshFreq.Minimum = new decimal(new int[] { 5, 0, 0, 0 });
+            nudRefreshFreq.Name = "nudRefreshFreq";
+            nudRefreshFreq.Size = new Size(45, 23);
+            nudRefreshFreq.TabIndex = 11;
+            nudRefreshFreq.Value = new decimal(new int[] { 5, 0, 0, 0 });
+            nudRefreshFreq.ValueChanged += nudRefreshFreq_ValueChanged;
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new Point(237, 199);
+            label2.Name = "label2";
+            label2.Size = new Size(56, 15);
+            label2.TabIndex = 12;
+            label2.Text = "secondes";
             // 
             // frmMain
             // 
@@ -929,6 +965,7 @@
             ((System.ComponentModel.ISupportInitialize)ipbConfigSensorSttEnv).EndInit();
             ((System.ComponentModel.ISupportInitialize)ipbConfigSensorSttSqm).EndInit();
             ((System.ComponentModel.ISupportInitialize)ipbConfigSensorSttCloud).EndInit();
+            ((System.ComponentModel.ISupportInitialize)nudRefreshFreq).EndInit();
             ResumeLayout(false);
         }
 
@@ -1001,5 +1038,8 @@
         private Label lblExpDatas;
         private Label lblBortleClassLabel;
         private Label lblBortleClassDatas;
+        private Label label2;
+        private NumericUpDown nudRefreshFreq;
+        private Label label1;
     }
 }

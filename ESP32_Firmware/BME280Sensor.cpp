@@ -19,10 +19,16 @@ void BME280Sensor::begin() {
 }
 
 float BME280Sensor::getTemperature(float cloudSensorTemp, float tempOffset) {
-    float temp = -42.0;
+    float temp = -420.0;
+    float somme = 0;
     float tempCorrectionCoef = 1.0;
+
     if (status == Connected) {
-        temp = bme.readTemperature();
+        for (uint8_t i = 0; i < nbMesures; i++) {
+            somme += bme.readTemperature();
+            delay(100);
+        }
+        temp = somme / nbMesures;
         Serial.println("temp mesurée : " + String(temp));
         Serial.println("cloudSensorTemp : " + String(cloudSensorTemp));
         Serial.println("Ratio cloudSensorTemp*100/temp : " + String(cloudSensorTemp*100/temp));
@@ -33,15 +39,35 @@ float BME280Sensor::getTemperature(float cloudSensorTemp, float tempOffset) {
         }
         Serial.println("temp retenue : " + String(round((temp/tempCorrectionCoef)*100)/100.0)+tempOffset);
     }
-    return (round((temp/tempCorrectionCoef)*100)/100.0)+tempOffset;
+    return temp != -420.0 ? (round((temp/tempCorrectionCoef)*100)/100.0)+tempOffset : temp;
 }
 
 float BME280Sensor::getPressure() {
-    return (status == Connected) ? (bme.readPressure()*PressCoef) / 100.0F : -42.0; // Converti en hPa
+    float pres = -42.0;
+    float somme = 0;
+    if (status == Connected) {
+        for (uint8_t i = 0; i < nbMesures; i++) {
+            somme += bme.readPressure();
+            delay(100);
+        }
+        pres = somme / nbMesures;
+    }
+    return pres != -42.0 ? (pres*PressCoef)/100.0F : pres;
+    //return (status == Connected) ? (bme.readPressure()*PressCoef) / 100.0F : -42.0; // Converti en hPa
 }
 
 float BME280Sensor::getHumidity() {
-    return (status == Connected) ? bme.readHumidity()*HumCoef : -42.0;
+    float hum = -42.0;
+    float somme = 0;
+    if (status == Connected) {
+        for (uint8_t i = 0; i < nbMesures; i++) {
+            somme += bme.readHumidity();
+            delay(100);
+        }
+        hum = somme / nbMesures;
+    }
+    return hum != -42.0 ? hum*HumCoef : hum;
+    //return (status == Connected) ? bme.readHumidity()*HumCoef : -42.0;
 }
 
 float BME280Sensor::getAltitude(float seaLevelPressure) {

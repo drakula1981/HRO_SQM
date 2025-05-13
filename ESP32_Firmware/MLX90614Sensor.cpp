@@ -21,24 +21,11 @@ double MLX90614Sensor::ComputeTempCorrectionCoefficient(double ambiant, double s
     double deltaTemp = (skyTemp / ambiant) * 10;
 
     double K1 = YearK1Values[month];
-    Serial.println("[ComputeTempCorrectionCoefficient] Constants: K1/K2/K3/K4/K5");
-    String constants = String(K1) + "/";
-    constants += String(K2) + "/";
-    constants += String(K3) + "/";
-    constants += String(K4) + "/";
-    constants += String(K5);
-    Serial.println(constants);
     
     double k1 = K1 / 100;
     double k2 = ambiant - (K2 + deltaTemp) / 10;
     double k3 = K3 / 100;
     double k4 = pow(exp(K4 / 1000 * ambiant), K5 / 100);
-    Serial.println("[ComputeTempCorrectionCoefficient] variables: k1/k2/k3/k4");
-    String variables = String(k1) + "/";
-    variables += String(k2) + "/";
-    variables += String(k3) + "/";
-    variables += String(k4);
-    Serial.println(variables);
     double coef = round((k1 * k2 + k3 * k4) * 100) / 100;
 
     Serial.print("[ComputeTempCorrectionCoefficient] coef = ");

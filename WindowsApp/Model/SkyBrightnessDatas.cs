@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace WindowsApp.Model {
     internal class SkyBrightnessDatas : ModelBase<SkyBrightnessDatas> {
         private static readonly HttpClient HttpClient = new() {
-            Timeout = TimeSpan.FromSeconds(5)
+            Timeout = TimeSpan.FromSeconds(20)
         };
         //{"timestamp":"2025-05-12 19:07:16","fullLuminosity":1.837699e8,"infraredLuminosity":20687,"visibleLuminosity":1,"mpsas":23.78197,"dmpsas":1.086,"integrationValue":600,"gainValue":148,"niter":1,"lux":0}
         [JsonProperty("timestamp")] public DateTime TimeStamp { get; private set; }
