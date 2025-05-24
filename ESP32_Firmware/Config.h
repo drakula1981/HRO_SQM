@@ -31,4 +31,6 @@
 #define WIFI_DEFAULT_SSID "drakulaNetworkFbx"
 #define WIFI_DEFAULT_PASS "@699510CD6D04#EC#955E0BD7EA6D@"
 
+//#define WIFI_DEFAULT_SSID "TP-Link_0ADB"
+//#define WIFI_DEFAULT_PASS "30745055"
 #endif
