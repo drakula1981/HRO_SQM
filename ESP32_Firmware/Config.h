@@ -33,4 +33,16 @@
 
 //#define WIFI_DEFAULT_SSID "TP-Link_0ADB"
 //#define WIFI_DEFAULT_PASS "30745055"
+
+#define ROUTE_AUTH "/Auth"
+//#define ROUTE_BATTERY "/Battery"
+#define ROUTE_CALIBRATION_DATAS "/CalibrationDatas"
+#define ROUTE_CLOUD_COVER "/CloudCover"
+#define ROUTE_IDENTIFICATION "/Device/status"
+#define ROUTE_REBOOT "/reboot"
+#define ROUTE_SKY_BRIGHTNESS "/SkyBrightness"
+#define ROUTE_WEATHER "/Weather"
+#define ROUTE_WIFI_STATUS "/Wifi/status"
+#define ROUTE_WIFI_CONFIG "/Wifi/config"
+
 #endif

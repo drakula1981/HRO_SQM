@@ -12,7 +12,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Éléments de solution", "�
 		HRO_Sky_Sensor\Base.stl = HRO_Sky_Sensor\Base.stl
 		HRO_Sky_Sensor\Couvercle.stl = HRO_Sky_Sensor\Couvercle.stl
 		HRO_Sky_Sensor\Support_Capteur_TSL2591.stl = HRO_Sky_Sensor\Support_Capteur_TSL2591.stl
-		HRO_Sky_Sensor\Support_ESP32.stl = HRO_Sky_Sensor\Support_ESP32.stl
 	EndProjectSection
 EndProject
 Global

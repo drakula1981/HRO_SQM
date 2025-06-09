@@ -1,29 +1,59 @@
+using ScottPlot;
+using ScottPlot.Plottables;
+using System.IO;
+using System.IO.Ports;
 using WindowsApp.Model;
 
 namespace WindowsApp {
     public partial class frmMain : Form {
         private readonly HttpClient httpClient;
         private readonly SemaphoreSlim semaphore = new(10); // Limite à 10 requêtes
-        private string DeviceUrl { get; set; }
+        private string DeviceHostName { get; set; }
+        private string DeviceComPort { get; set; }
+
+        private DataLogger TempStreamer;
+        private DataLogger HumStreamer;
+        private DataLogger PressStreamer;
+        private DataLogger SQMStreamer;
+
+        private DeviceStatus? DeviceStatus { get; set; }
+        private WeatherDatas? WeatherDatas { get; set; }
+        private CloudCoverDatas? CloudCoverDatas { get; set; }
+        private SkyBrightnessDatas? SkyBrightnessDatas { get; set; }
+
 
         public frmMain() {
             InitializeComponent();
+            InitializeCharts();
             tRetrieveDatas.Tick += async (s, e) => await UpdateDatas();
             httpClient = new() {
                 Timeout = TimeSpan.FromSeconds(5)
             };
 
+            cbComPorts.DataSource = SerialPort.GetPortNames();
+            btnConnectComPort.Enabled = cbComPorts.Items.Count > 0;
         }
 
-        private async Task<string> GetDeviceStatusAsync() {
-            try {
-                var response = await httpClient.GetAsync($"{DeviceUrl}/device/status");
-                response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsStringAsync();
-            } catch (Exception ex) {
-                return $"Error: {ex.Message}";
-            }
+        private void InitializeCharts() {
+            TempStreamer = fpTempHumPress.Plot.Add.DataLogger();
+            HumStreamer = fpTempHumPress.Plot.Add.DataLogger();
+            PressStreamer = fpTempHumPress.Plot.Add.DataLogger();
+            SQMStreamer = fpSQM.Plot.Add.DataLogger();
+
+            fpTempHumPress.Plot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.DateTimeAutomatic();
+            fpTempHumPress.Plot.Axes.DateTimeTicksBottom();
+            fpTempHumPress.Plot.Axes.AutoScale();
+            /*fpTempHumPress.Plot.Axes.Add(TempStreamer, label: "Température", color: System.Drawing.Color.Red);
+            fpTempHumPress.Plot.Add(HumStreamer, label: "Humidité", color: System.Drawing.Color.Blue);
+            fpTempHumPress.Plot.Add(PressStreamer, label: "Pression", color: System.Drawing.Color.Green);*/
+            fpSQM.Plot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.DateTimeAutomatic();
+            fpSQM.Plot.Axes.DateTimeTicksBottom();
+            fpSQM.Plot.Axes.AutoScale();
+
+            fpTempHumPress.Refresh();
+            fpSQM.Refresh();
         }
+
 
         private async Task<List<KeyValuePair<string, string>>> ScanNetworkAsync() {
             var devices = new List<KeyValuePair<string, string>>();
@@ -52,10 +82,10 @@ namespace WindowsApp {
         private async Task<KeyValuePair<string, string>?> CheckDeviceAsync(string ip) {
             await semaphore.WaitAsync(); // Attendre qu'une place soit disponible
             try {
-                var response = await httpClient.GetAsync($"http://{ip}/device/status");
-                if (response.IsSuccessStatusCode) {
-                    var content = DeviceStatus.Deserialize(await response.Content.ReadAsStringAsync());
-                    return new KeyValuePair<string, string>(content?.DeviceName ?? "Unknown", ip);
+                DeviceStatus? deviceStatus = new(CommunicationType.WiFi, ip);
+                var stt = await deviceStatus.GetDeviceStatusDatasAsync();
+                if (stt != null && !string.IsNullOrEmpty(stt.DeviceID)) {
+                    return new KeyValuePair<string, string>(stt.DeviceID, ip);
                 }
             } catch {
                 // Ignorer les erreurs
@@ -91,26 +121,71 @@ namespace WindowsApp {
         }
 
         private async void btnConfigConnectHost_Click(object sender, EventArgs e) {
-            DeviceUrl = $"http://{txtConfigHost.Text}";
-            var result = DeviceStatus.Deserialize(await GetDeviceStatusAsync());
-            lblConfigDeviceNameText.Text = result?.DeviceName;
-            lblConfigDeviceIdText.Text = result?.DeviceID;
-            lblConfigDeviceWifiText.Text = result?.WifiStatus;
+            DeviceHostName = txtConfigHost.Text;
+            DeviceStatus = new(CommunicationType.WiFi, DeviceHostName);
+            var result = await DeviceStatus.GetDeviceStatusDatasAsync();
+            if (result == null || result.SensorStatus == null) {
+                tsLblResult.Text = "Échec de la connexion à l'appareil.";
+                return;
+            }
 
-            ipbConfigSensorSttCloud.ForeColor = (bool)!result?.SensorStatus?.CloudSensorStatus?.Equals("Connected") ? Color.Red : Color.Green;
-            lblConfigSensorSttCloudTxt.Text = result?.SensorStatus?.CloudSensorStatus;
-            lblConfigSensorSttCloudTxt.ForeColor = (bool)!result?.SensorStatus?.CloudSensorStatus?.Equals("Connected") ? Color.Red : Color.Green;
+            lblConfigDeviceNameText.Text = result.DeviceName ?? "Nom inconnu";
+            lblConfigDeviceIdText.Text = result.DeviceID ?? "ID inconnu";
+            lblConfigDeviceWifiText.Text = result.WifiStatus ?? "Statut WiFi inconnu";
 
-            ipbConfigSensorSttEnv.ForeColor = (bool)!result?.SensorStatus?.EnvironmentSensorStatus?.Equals("Connected") ? Color.Red : Color.Green;
-            lblConfigSensorSttEnvTxt.Text = result?.SensorStatus?.EnvironmentSensorStatus;
-            lblConfigSensorSttEnvTxt.ForeColor = (bool)!result?.SensorStatus?.EnvironmentSensorStatus?.Equals("Connected") ? Color.Red : Color.Green;
+            ipbConfigSensorSttCloud.ForeColor = result.SensorStatus.CloudSensorStatus?.Equals("Connected") == true ? System.Drawing.Color.Green : System.Drawing.Color.Red;
+            lblConfigSensorSttCloudTxt.Text = result.SensorStatus.CloudSensorStatus ?? "Statut inconnu";
+            lblConfigSensorSttCloudTxt.ForeColor = result.SensorStatus.CloudSensorStatus?.Equals("Connected") == true ? System.Drawing.Color.Green : System.Drawing.Color.Red;
 
-            ipbConfigSensorSttSqm.ForeColor = (bool)!result?.SensorStatus?.SkyLuminositySensorStatus?.Equals("Connected") ? Color.Red : Color.Green;
-            lblConfigSensorSttSqmTxt.Text = result?.SensorStatus?.SkyLuminositySensorStatus;
-            lblConfigSensorSttSqmTxt.ForeColor = (bool)!result?.SensorStatus?.SkyLuminositySensorStatus?.Equals("Connected") ? Color.Red : Color.Green;
+            ipbConfigSensorSttEnv.ForeColor = result.SensorStatus.EnvironmentSensorStatus?.Equals("Connected") == true ? System.Drawing.Color.Green : System.Drawing.Color.Red;
+            lblConfigSensorSttEnvTxt.Text = result.SensorStatus.EnvironmentSensorStatus ?? "Statut inconnu";
+            lblConfigSensorSttEnvTxt.ForeColor = result.SensorStatus.EnvironmentSensorStatus?.Equals("Connected") == true ? System.Drawing.Color.Green : System.Drawing.Color.Red;
 
-            ipbConfigSensorSttBatt.ForeColor = (bool)!result?.SensorStatus?.BatterySensorStatus?.Equals("Connected") ? Color.Red : Color.Green;
+            ipbConfigSensorSttSqm.ForeColor = result.SensorStatus.SkyLuminositySensorStatus?.Equals("Connected") == true ? System.Drawing.Color.Green : System.Drawing.Color.Red;
+            lblConfigSensorSttSqmTxt.Text = result.SensorStatus.SkyLuminositySensorStatus ?? "Statut inconnu";
+            lblConfigSensorSttSqmTxt.ForeColor = result.SensorStatus.SkyLuminositySensorStatus?.Equals("Connected") == true ? System.Drawing.Color.Green : System.Drawing.Color.Red;
+
             tsLblResult.Text = "Connecté !";
+
+            btnConfigConnectHost.Enabled = false;
+            CloudCoverDatas = new(CommunicationType.WiFi, DeviceHostName);
+            WeatherDatas = new(CommunicationType.WiFi, DeviceHostName);
+            SkyBrightnessDatas = new(CommunicationType.WiFi, DeviceHostName);
+            tRetrieveDatas.Start();
+        }
+
+
+        private async void btnConnectComPort_Click(object sender, EventArgs e) {
+            DeviceComPort = cbComPorts.SelectedItem.ToString();
+            DeviceStatus = new(CommunicationType.USB, DeviceComPort);
+            var result = await DeviceStatus.GetDeviceStatusDatasAsync();
+            if (result == null || result.SensorStatus == null) {
+                tsLblResult.Text = "Échec de la connexion à l'appareil.";
+                return;
+            }
+
+            lblConfigDeviceNameText.Text = result.DeviceName ?? "Nom inconnu";
+            lblConfigDeviceIdText.Text = result.DeviceID ?? "ID inconnu";
+            lblConfigDeviceWifiText.Text = result.WifiStatus ?? "Statut WiFi inconnu";
+
+            ipbConfigSensorSttCloud.ForeColor = result.SensorStatus.CloudSensorStatus?.Equals("Connected") == true ? System.Drawing.Color.Green : System.Drawing.Color.Red;
+            lblConfigSensorSttCloudTxt.Text = result.SensorStatus.CloudSensorStatus ?? "Statut inconnu";
+            lblConfigSensorSttCloudTxt.ForeColor = result.SensorStatus.CloudSensorStatus?.Equals("Connected") == true ? System.Drawing.Color.Green : System.Drawing.Color.Red;
+
+            ipbConfigSensorSttEnv.ForeColor = result.SensorStatus.EnvironmentSensorStatus?.Equals("Connected") == true ? System.Drawing.Color.Green : System.Drawing.Color.Red;
+            lblConfigSensorSttEnvTxt.Text = result.SensorStatus.EnvironmentSensorStatus ?? "Statut inconnu";
+            lblConfigSensorSttEnvTxt.ForeColor = result.SensorStatus.EnvironmentSensorStatus?.Equals("Connected") == true ? System.Drawing.Color.Green : System.Drawing.Color.Red;
+
+            ipbConfigSensorSttSqm.ForeColor = result.SensorStatus.SkyLuminositySensorStatus?.Equals("Connected") == true ? System.Drawing.Color.Green : System.Drawing.Color.Red;
+            lblConfigSensorSttSqmTxt.Text = result.SensorStatus.SkyLuminositySensorStatus ?? "Statut inconnu";
+            lblConfigSensorSttSqmTxt.ForeColor = result.SensorStatus.SkyLuminositySensorStatus?.Equals("Connected") == true ? System.Drawing.Color.Green : System.Drawing.Color.Red;
+
+            tsLblResult.Text = "Connecté !";
+
+            btnConfigConnectHost.Enabled = false;
+            CloudCoverDatas = new(CommunicationType.USB, DeviceComPort);
+            WeatherDatas = new(CommunicationType.USB, DeviceComPort);
+            SkyBrightnessDatas = new(CommunicationType.USB, DeviceComPort);
             tRetrieveDatas.Start();
         }
 
@@ -127,34 +202,74 @@ namespace WindowsApp {
         }
 
         private async Task UpdateDatas() {
-            CloudCoverDatas? cdatas = await CloudCoverDatas.GetCloudCoverDatasAsync(txtConfigHost.Text);
-            await Task.Delay(1000);
-            WeatherDatas? wdatas = await WeatherDatas.GetWeatherDatasAsync(txtConfigHost.Text);
-            await Task.Delay(1000);
-            SkyBrightnessDatas? sdatas = await SkyBrightnessDatas.GetSkyBrightnessDatasAsync(txtConfigHost.Text);
+            tsLblResult.Text = "Récupération des données...";
+            if(CloudCoverDatas == null || WeatherDatas == null || SkyBrightnessDatas == null) {
+                tsLblResult.Text = "Erreur : Appareil non connecté.";
+                return;
+            }
+            CloudCoverDatas? cdatas = await CloudCoverDatas.GetCloudCoverDatasAsync();
+            if (cdatas == null) {
+                tsLblResult.Text = "Erreur : Impossible de récupérer les données de couverture nuageuse.";
+                return;
+            }
 
-            lblTempData.Text = $"{wdatas?.Temperature:n2}";
-            lblHumData.Text = $"{wdatas?.Humidity:n0}";
-            lblPressData.Text = $"{wdatas?.Pressure:n0}";
-            lblSkyTempData.Text = $"{cdatas?.SkyTemperature:n2}";
-            lblCloudCoverData.Text = $"{cdatas?.PercentCoverture:n0}";
-            if (cdatas?.PercentCoverture <= 10) {
-                ipbCloudCover.ForeColor = Color.Green;
+            await Task.Delay(1000);
+            WeatherDatas? wdatas = await WeatherDatas.GetWeatherDatasAsync();
+            if (wdatas == null) {
+                tsLblResult.Text = "Erreur : Impossible de récupérer les données météorologiques.";
+                return;
+            }
+
+            await Task.Delay(1000);
+            SkyBrightnessDatas? sdatas = await SkyBrightnessDatas.GetSkyBrightnessDatasAsync();
+            if (sdatas == null) {
+                tsLblResult.Text = "Erreur : Impossible de récupérer les données de luminosité du ciel.";
+                return;
+            }
+
+            lblTempData.Text = $"{wdatas.Temperature:n2}";
+            lblHumData.Text = $"{wdatas.Humidity:n0}";
+            lblPressData.Text = $"{wdatas.Pressure:n0}";
+            lblSkyTempData.Text = $"{cdatas.SkyTemperature:n2}";
+            lblCloudCoverData.Text = $"{cdatas.PercentCoverture:n0}";
+
+            if (cdatas.PercentCoverture <= 10) {
+                ipbCloudCover.ForeColor = System.Drawing.Color.Green;
                 ipbCloudCover.IconChar = FontAwesome.Sharp.IconChar.Moon;
-            } else if (cdatas?.PercentCoverture > 10 && cdatas?.PercentCoverture <= 50) {
-                ipbCloudCover.ForeColor = Color.Orange;
+            } else if (cdatas.PercentCoverture > 10 && cdatas.PercentCoverture <= 50) {
+                ipbCloudCover.ForeColor = System.Drawing.Color.Orange;
                 ipbCloudCover.IconChar = FontAwesome.Sharp.IconChar.CloudMoon;
             } else {
-                ipbCloudCover.ForeColor = Color.Red;
+                ipbCloudCover.ForeColor = System.Drawing.Color.Red;
                 ipbCloudCover.IconChar = FontAwesome.Sharp.IconChar.Cloud;
             }
-            lblSqmDatas.Text = $"{sdatas?.Mpsas:n2}";
-            lblFullLumDatas.Text = $"{sdatas?.FullLuminosity:n0}";
-            lblIrDatas.Text = $"{sdatas?.InfraredLuminosity:n0}";
-            lblVisibleDatas.Text = $"{sdatas?.VisibleLuminosity:n0}";
-            lblDmpsasDatas.Text = $"{sdatas?.Dmpsas:n2}";
-            lblExpDatas.Text = $"{sdatas?.IntegrationValue:n0}/{sdatas?.GainValue:n0}/{sdatas?.Niter:n0}";
-            lblBortleClassDatas.Text = $"{sdatas?.BortleClass}";
+
+            lblSqmDatas.Text = $"{sdatas.Mpsas:n2}";
+            lblFullLumDatas.Text = $"{sdatas.FullLuminosity:n0}";
+            lblIrDatas.Text = $"{sdatas.InfraredLuminosity:n0}";
+            lblVisibleDatas.Text = $"{sdatas.VisibleLuminosity:n0}";
+            lblDmpsasDatas.Text = $"{sdatas.Dmpsas:n2}";
+            lblExpDatas.Text = $"{sdatas.IntegrationValue:n0}/{sdatas.GainValue:n0}/{sdatas.Niter:n0}";
+            lblBortleClassDatas.Text = $"{sdatas.BortleClass}";
+
+            var currentTime = DateTime.Now;
+
+            SQMStreamer.Add(new Coordinates(currentTime.ToOADate(), sdatas.Mpsas));
+            TempStreamer.Add(new Coordinates(currentTime.ToOADate(), wdatas.Temperature));
+            HumStreamer.Add(new Coordinates(currentTime.ToOADate(), wdatas.Humidity));
+            PressStreamer.Add(new Coordinates(currentTime.ToOADate(), wdatas.Pressure));
+
+            if (SQMStreamer.Data.Coordinates.Count > 18000)
+                SQMStreamer.Data.Coordinates.RemoveAt(0);
+            if (TempStreamer.Data.Coordinates.Count > 18000)
+                TempStreamer.Data.Coordinates.RemoveAt(0);
+            if (HumStreamer.Data.Coordinates.Count > 18000)
+                HumStreamer.Data.Coordinates.RemoveAt(0);
+            if (PressStreamer.Data.Coordinates.Count > 18000)
+                PressStreamer.Data.Coordinates.RemoveAt(0);
+
+            fpTempHumPress.Refresh();
+            fpSQM.Refresh();
         }
 
         private void nudRefreshFreq_ValueChanged(object sender, EventArgs e) {
@@ -162,5 +277,6 @@ namespace WindowsApp {
             tRetrieveDatas.Interval = (int)nudRefreshFreq.Value * 1000;
             tRetrieveDatas.Start();
         }
+
     }
 }

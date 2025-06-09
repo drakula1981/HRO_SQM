@@ -69,7 +69,7 @@
 
 SQM_TSL2591::SQM_TSL2591(int32_t sensorID)
 {
-  Serial.println("Constructor " + String(sensorID) + ".");
+  //Serial.println("Constructor " + String(sensorID) + ".");
   _initialized = false;
   _integration = TSL2591_INTEGRATIONTIME_400MS;
   _gain = TSL2591_GAIN_LOW;
@@ -82,11 +82,11 @@ SQM_TSL2591::SQM_TSL2591(int32_t sensorID)
 
 boolean SQM_TSL2591::begin(void)
 {
-  Serial.println("Begin " + String(_sensorID) + ".");
+  //Serial.println("Begin " + String(_sensorID) + ".");
   Wire.begin();
-  Serial.println("reading 0x12 addr...");
+  //Serial.println("reading 0x12 addr...");
   uint8_t id = read8(0x12);
-  Serial.println("0x12 addr read.");
+  //Serial.println("0x12 addr read.");
   if (id != 0x50) {
     Serial.println("0x12 addr gave wrong id.");
     return false;
@@ -98,10 +98,10 @@ boolean SQM_TSL2591::begin(void)
   setTiming(_integration);
   setGain(_gain);
   setCalibrationOffset(_calibrationOffset);
-  Serial.println("device initialized. Disabling");
+  //Serial.println("device initialized. Disabling");
   // Note: by default, the device is in power down mode on bootup
   disable();
-  Serial.println("device disabled");
+  //Serial.println("device disabled");
   verbose = true;
 
   return _initialized;

@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent() {
             components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmMain));
             tcConfig = new TabControl();
             tDatas = new TabPage();
             lblExpDatasLabel = new Label();
@@ -70,13 +71,17 @@
             gpTempHumPress = new GroupBox();
             fpTempHumPress = new ScottPlot.WinForms.FormsPlot();
             tConfig = new TabPage();
+            lblComPorts = new Label();
+            cbComPorts = new ComboBox();
+            label2 = new Label();
+            nudRefreshFreq = new NumericUpDown();
+            label1 = new Label();
             gpCalibrationDatas = new GroupBox();
             btnUploadCal = new Button();
             btnDownloadCal = new Button();
             SttStripMain = new StatusStrip();
             tsLblResult = new ToolStripStatusLabel();
             gpConfigHostDatas = new GroupBox();
-            ipbConfigSensorSttBatt = new FontAwesome.Sharp.IconPictureBox();
             lblConfigDeviceWifiText = new Label();
             lblConfigDeviceIdText = new Label();
             lblConfigDeviceNameText = new Label();
@@ -95,9 +100,7 @@
             btnConfigScan = new Button();
             txtConfigHost = new TextBox();
             tRetrieveDatas = new System.Windows.Forms.Timer(components);
-            label1 = new Label();
-            nudRefreshFreq = new NumericUpDown();
-            label2 = new Label();
+            btnConnectComPort = new Button();
             tcConfig.SuspendLayout();
             tDatas.SuspendLayout();
             gpSkyBrightness.SuspendLayout();
@@ -108,15 +111,14 @@
             gpSQM.SuspendLayout();
             gpTempHumPress.SuspendLayout();
             tConfig.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)nudRefreshFreq).BeginInit();
             gpCalibrationDatas.SuspendLayout();
             SttStripMain.SuspendLayout();
             gpConfigHostDatas.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)ipbConfigSensorSttBatt).BeginInit();
             gpConfigSensorStatuses.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)ipbConfigSensorSttEnv).BeginInit();
             ((System.ComponentModel.ISupportInitialize)ipbConfigSensorSttSqm).BeginInit();
             ((System.ComponentModel.ISupportInitialize)ipbConfigSensorSttCloud).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)nudRefreshFreq).BeginInit();
             SuspendLayout();
             // 
             // tcConfig
@@ -570,7 +572,7 @@
             fpSQM.Location = new Point(6, 23);
             fpSQM.Margin = new Padding(1);
             fpSQM.Name = "fpSQM";
-            fpSQM.Size = new Size(562, 112);
+            fpSQM.Size = new Size(546, 112);
             fpSQM.TabIndex = 1;
             // 
             // gpTempHumPress
@@ -591,11 +593,14 @@
             fpTempHumPress.Location = new Point(7, 25);
             fpTempHumPress.Margin = new Padding(1);
             fpTempHumPress.Name = "fpTempHumPress";
-            fpTempHumPress.Size = new Size(562, 108);
+            fpTempHumPress.Size = new Size(546, 108);
             fpTempHumPress.TabIndex = 0;
             // 
             // tConfig
             // 
+            tConfig.Controls.Add(btnConnectComPort);
+            tConfig.Controls.Add(lblComPorts);
+            tConfig.Controls.Add(cbComPorts);
             tConfig.Controls.Add(label2);
             tConfig.Controls.Add(nudRefreshFreq);
             tConfig.Controls.Add(label1);
@@ -614,6 +619,52 @@
             tConfig.TabIndex = 2;
             tConfig.Text = "Configuration";
             tConfig.UseVisualStyleBackColor = true;
+            // 
+            // lblComPorts
+            // 
+            lblComPorts.AutoSize = true;
+            lblComPorts.Location = new Point(172, 63);
+            lblComPorts.Name = "lblComPorts";
+            lblComPorts.Size = new Size(71, 15);
+            lblComPorts.TabIndex = 14;
+            lblComPorts.Text = "COM Ports :";
+            // 
+            // cbComPorts
+            // 
+            cbComPorts.FormattingEnabled = true;
+            cbComPorts.Location = new Point(169, 88);
+            cbComPorts.Name = "cbComPorts";
+            cbComPorts.Size = new Size(78, 23);
+            cbComPorts.TabIndex = 13;
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new Point(237, 199);
+            label2.Name = "label2";
+            label2.Size = new Size(56, 15);
+            label2.TabIndex = 12;
+            label2.Text = "secondes";
+            // 
+            // nudRefreshFreq
+            // 
+            nudRefreshFreq.Location = new Point(188, 195);
+            nudRefreshFreq.Maximum = new decimal(new int[] { 60, 0, 0, 0 });
+            nudRefreshFreq.Minimum = new decimal(new int[] { 5, 0, 0, 0 });
+            nudRefreshFreq.Name = "nudRefreshFreq";
+            nudRefreshFreq.Size = new Size(45, 23);
+            nudRefreshFreq.TabIndex = 11;
+            nudRefreshFreq.Value = new decimal(new int[] { 5, 0, 0, 0 });
+            nudRefreshFreq.ValueChanged += nudRefreshFreq_ValueChanged;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(21, 197);
+            label1.Name = "label1";
+            label1.Size = new Size(161, 15);
+            label1.TabIndex = 10;
+            label1.Text = "Fréquence Rafraichissement :";
             // 
             // gpCalibrationDatas
             // 
@@ -666,7 +717,6 @@
             // 
             // gpConfigHostDatas
             // 
-            gpConfigHostDatas.Controls.Add(ipbConfigSensorSttBatt);
             gpConfigHostDatas.Controls.Add(lblConfigDeviceWifiText);
             gpConfigHostDatas.Controls.Add(lblConfigDeviceIdText);
             gpConfigHostDatas.Controls.Add(lblConfigDeviceNameText);
@@ -682,21 +732,6 @@
             gpConfigHostDatas.TabIndex = 7;
             gpConfigHostDatas.TabStop = false;
             gpConfigHostDatas.Text = "Données";
-            // 
-            // ipbConfigSensorSttBatt
-            // 
-            ipbConfigSensorSttBatt.BackColor = Color.Transparent;
-            ipbConfigSensorSttBatt.ForeColor = SystemColors.ControlText;
-            ipbConfigSensorSttBatt.IconChar = FontAwesome.Sharp.IconChar.Battery0;
-            ipbConfigSensorSttBatt.IconColor = SystemColors.ControlText;
-            ipbConfigSensorSttBatt.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            ipbConfigSensorSttBatt.IconSize = 29;
-            ipbConfigSensorSttBatt.Location = new Point(254, 19);
-            ipbConfigSensorSttBatt.Margin = new Padding(1);
-            ipbConfigSensorSttBatt.Name = "ipbConfigSensorSttBatt";
-            ipbConfigSensorSttBatt.Size = new Size(34, 29);
-            ipbConfigSensorSttBatt.TabIndex = 10;
-            ipbConfigSensorSttBatt.TabStop = false;
             // 
             // lblConfigDeviceWifiText
             // 
@@ -859,9 +894,9 @@
             btnConfigConnectHost.Location = new Point(169, 34);
             btnConfigConnectHost.Margin = new Padding(1);
             btnConfigConnectHost.Name = "btnConfigConnectHost";
-            btnConfigConnectHost.Size = new Size(79, 21);
+            btnConfigConnectHost.Size = new Size(79, 23);
             btnConfigConnectHost.TabIndex = 6;
-            btnConfigConnectHost.Text = "Connecter";
+            btnConfigConnectHost.Text = "Connecter\r\n";
             btnConfigConnectHost.UseVisualStyleBackColor = true;
             btnConfigConnectHost.Click += btnConfigConnectHost_Click;
             // 
@@ -901,34 +936,17 @@
             // 
             tRetrieveDatas.Interval = 10000;
             // 
-            // label1
+            // btnConnectComPort
             // 
-            label1.AutoSize = true;
-            label1.Location = new Point(21, 197);
-            label1.Name = "label1";
-            label1.Size = new Size(161, 15);
-            label1.TabIndex = 10;
-            label1.Text = "Fréquence Rafraichissement :";
-            // 
-            // nudRefreshFreq
-            // 
-            nudRefreshFreq.Location = new Point(188, 195);
-            nudRefreshFreq.Maximum = new decimal(new int[] { 60, 0, 0, 0 });
-            nudRefreshFreq.Minimum = new decimal(new int[] { 5, 0, 0, 0 });
-            nudRefreshFreq.Name = "nudRefreshFreq";
-            nudRefreshFreq.Size = new Size(45, 23);
-            nudRefreshFreq.TabIndex = 11;
-            nudRefreshFreq.Value = new decimal(new int[] { 5, 0, 0, 0 });
-            nudRefreshFreq.ValueChanged += nudRefreshFreq_ValueChanged;
-            // 
-            // label2
-            // 
-            label2.AutoSize = true;
-            label2.Location = new Point(237, 199);
-            label2.Name = "label2";
-            label2.Size = new Size(56, 15);
-            label2.TabIndex = 12;
-            label2.Text = "secondes";
+            btnConnectComPort.Enabled = false;
+            btnConnectComPort.Location = new Point(169, 116);
+            btnConnectComPort.Margin = new Padding(1);
+            btnConnectComPort.Name = "btnConnectComPort";
+            btnConnectComPort.Size = new Size(79, 23);
+            btnConnectComPort.TabIndex = 15;
+            btnConnectComPort.Text = "Connecter\r\n";
+            btnConnectComPort.UseVisualStyleBackColor = true;
+            btnConnectComPort.Click += btnConnectComPort_Click;
             // 
             // frmMain
             // 
@@ -936,6 +954,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(570, 330);
             Controls.Add(tcConfig);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Margin = new Padding(1);
             Name = "frmMain";
             StartPosition = FormStartPosition.CenterScreen;
@@ -954,18 +973,17 @@
             gpTempHumPress.ResumeLayout(false);
             tConfig.ResumeLayout(false);
             tConfig.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)nudRefreshFreq).EndInit();
             gpCalibrationDatas.ResumeLayout(false);
             SttStripMain.ResumeLayout(false);
             SttStripMain.PerformLayout();
             gpConfigHostDatas.ResumeLayout(false);
             gpConfigHostDatas.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)ipbConfigSensorSttBatt).EndInit();
             gpConfigSensorStatuses.ResumeLayout(false);
             gpConfigSensorStatuses.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)ipbConfigSensorSttEnv).EndInit();
             ((System.ComponentModel.ISupportInitialize)ipbConfigSensorSttSqm).EndInit();
             ((System.ComponentModel.ISupportInitialize)ipbConfigSensorSttCloud).EndInit();
-            ((System.ComponentModel.ISupportInitialize)nudRefreshFreq).EndInit();
             ResumeLayout(false);
         }
 
@@ -1002,7 +1020,6 @@
         private ScottPlot.WinForms.FormsPlot fpTempHumPress;
         private GroupBox gpTempHumPress;
         private GroupBox gpSQM;
-        private FontAwesome.Sharp.IconPictureBox ipbConfigSensorSttBatt;
         private GroupBox gpDatasWeather;
         private Label lblTempUnits;
         private Label lblTempData;
@@ -1041,5 +1058,8 @@
         private Label label2;
         private NumericUpDown nudRefreshFreq;
         private Label label1;
+        private Label lblComPorts;
+        private ComboBox cbComPorts;
+        private Button btnConnectComPort;
     }
 }

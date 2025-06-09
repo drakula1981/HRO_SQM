@@ -32,8 +32,7 @@
 #define ARDUINO_JWT_H
 
 #include <Arduino.h>
-
-
+#include "Config.h"
 
 class ArduinoJWT {
 private:

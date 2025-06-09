@@ -29,15 +29,15 @@ float BME280Sensor::getTemperature(float cloudSensorTemp, float tempOffset) {
             delay(100);
         }
         temp = somme / nbMesures;
-        Serial.println("temp mesurée : " + String(temp));
-        Serial.println("cloudSensorTemp : " + String(cloudSensorTemp));
-        Serial.println("Ratio cloudSensorTemp*100/temp : " + String(cloudSensorTemp*100/temp));
+        //Serial.println("temp mesurée : " + String(temp));
+        //Serial.println("cloudSensorTemp : " + String(cloudSensorTemp));
+        //Serial.println("Ratio cloudSensorTemp*100/temp : " + String(cloudSensorTemp*100/temp));
         if(cloudSensorTemp*100/temp> 30) {
-            Serial.print("> 30, application du coef : ");
+            //Serial.print("> 30, application du coef : ");
             tempCorrectionCoef = temp/cloudSensorTemp;
-            Serial.println(String(tempCorrectionCoef));
+            //Serial.println(String(tempCorrectionCoef));
         }
-        Serial.println("temp retenue : " + String(round((temp/tempCorrectionCoef)*100)/100.0)+tempOffset);
+        //Serial.println("temp retenue : " + String(round((temp/tempCorrectionCoef)*100)/100.0)+tempOffset);
     }
     return temp != -420.0 ? (round((temp/tempCorrectionCoef)*100)/100.0)+tempOffset : temp;
 }

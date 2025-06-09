@@ -27,6 +27,12 @@ void WiFiManager::startAccessPoint() {
     Serial.println("AP mode started. SSID: " + String(ap_ssid) + ", Key: " + String(ap_password));
 }
 
+void WifiEvent(WiFiEvent_t event) {
+  if(event == ETHERNET_EVENT_DISCONNECTED) {
+    WiFi.reconnect();
+  }
+}
+
 void WiFiManager::connectToWiFi() {
     char ssid[32];
     char password[64];
@@ -41,6 +47,7 @@ void WiFiManager::connectToWiFi() {
     }
     password[63] = '\0';
 
+    WiFi.onEvent(WifiEvent);
     WiFi.begin(ssid, password);
 
     int retryCount = 0;
@@ -66,6 +73,7 @@ void WiFiManager::connectToWiFi() {
 }
 
 void WiFiManager::connectToDefaultWiFi() {
+    WiFi.onEvent(WifiEvent);
     WiFi.begin(dflt_ssid, dflt_password);
 
     int retryCount = 0;

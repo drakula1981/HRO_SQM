@@ -28,8 +28,8 @@ double MLX90614Sensor::ComputeTempCorrectionCoefficient(double ambiant, double s
     double k4 = pow(exp(K4 / 1000 * ambiant), K5 / 100);
     double coef = round((k1 * k2 + k3 * k4) * 100) / 100;
 
-    Serial.print("[ComputeTempCorrectionCoefficient] coef = ");
-    Serial.println(coef);
+    //Serial.print("[ComputeTempCorrectionCoefficient] coef = ");
+    //Serial.println(coef);
 
     return coef;
 }

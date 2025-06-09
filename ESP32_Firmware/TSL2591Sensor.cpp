@@ -23,6 +23,7 @@ void TSL2591Sensor::begin() {
 
 void TSL2591Sensor::configure(sensorConfig config){
     sensor.config = config;
+    sensor.verbose = false;
 }
 
 float TSL2591Sensor::getFullLuminosity() {

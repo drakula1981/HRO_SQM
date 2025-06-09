@@ -13,7 +13,7 @@
 #include "EEPROMSensor.h"
 #include "WiFiManager.h"
 #include "ArduinoJWT.h"
-#include "LC709203FSensor.h"
+//#include "LC709203FSensor.h"
 
 const char *secret = JWT_SECRET;
 const char *root_ca =
@@ -56,9 +56,9 @@ BME280Sensor bmeSensor;
 TSL2591Sensor tslSensor;
 EEPROMSensor eepromSensor;
 WiFiManager wifiManager;
-LC709203FSensor battSensor;
+//LC709203FSensor battSensor;
 
-StaticJsonDocument<400> getSensorsStatus(BME280Sensor &bme, TSL2591Sensor &tsl, MLX90614Sensor &mlx, LC709203FSensor &batt) {
+StaticJsonDocument<400> getSensorsStatus(BME280Sensor &bme, TSL2591Sensor &tsl, MLX90614Sensor &mlx) {
   StaticJsonDocument<400> doc;
 
   // Inclure les statuts des capteurs
@@ -98,7 +98,7 @@ StaticJsonDocument<400> getSensorsStatus(BME280Sensor &bme, TSL2591Sensor &tsl, 
       break;
   }
 
-  switch (batt.getStatus()) {
+  /*switch (batt.getStatus()) {
     case Connected:
       doc["LC709203F"] = "Connected";
       break;
@@ -108,7 +108,7 @@ StaticJsonDocument<400> getSensorsStatus(BME280Sensor &bme, TSL2591Sensor &tsl, 
     case Error:
       doc["LC709203F"] = "Error";
       break;
-  }
+  }*/
 
   return doc;
 }
@@ -156,11 +156,73 @@ bool verifyJWT(String token) {
   return true;  // Jeton valide
 }
 
+String processRequest(String request) {
+  //Serial.println("Requete " + request + "...");
+  String jsonResponse;
+  if (request.startsWith(ROUTE_AUTH)) {
+    String userName = request.substring(5);
+    String token;
+    if (userName != "") {
+      token = generateJWT(userName);
+    } else {
+      return "{\"message\":\"Nom d'utilisateur manquant\"}";
+    }
+    StaticJsonDocument<200> doc;
+    doc["token"] = token;
+    serializeJson(doc, jsonResponse);
+  /*} else if (request == ROUTE_BATTERY) {
+    jsonResponse = battSensor.toJSON();*/
+  } else if (request == ROUTE_WEATHER) {
+    jsonResponse = bmeSensor.toJSON(mlxSensor.getAmbientTemp(), eepromSensor.getTempCalOffset());
+  } else if (request == ROUTE_CLOUD_COVER) {
+    jsonResponse = mlxSensor.toJSON();
+  } else if (request == ROUTE_CALIBRATION_DATAS) {
+    jsonResponse = eepromSensor.toJSON();
+  } else if (request == ROUTE_SKY_BRIGHTNESS) {
+    tslSensor.setCalibrationTemperature(bmeSensor.getTemperature(mlxSensor.getAmbientTemp(), eepromSensor.getTempCalOffset()));
+    jsonResponse = tslSensor.toJSON();
+  } else if (request == ROUTE_IDENTIFICATION) {
+    StaticJsonDocument<500> response;
+    response["deviceName"] = "HRO SQM Meter v" + String(Version);
+    response["deviceID"] = wifiManager.getUniqueID();  // Identifiant unique
+    response["wifiStatus"] = WiFi.status() == WL_CONNECTED ? "Connected" : "Disconnected";
+
+    // Ajouter les statuts des capteurs
+    StaticJsonDocument<400> sensors = getSensorsStatus(bmeSensor, tslSensor, mlxSensor);
+    response["sensors"] = sensors;
+    serializeJson(response, jsonResponse);
+  } else if (request.startsWith(ROUTE_REBOOT)) {
+    String token = request.substring(8);
+    if (!verifyJWT(token)) {
+      return "{\"message\": \"Token invalide ou expiré\"}";
+    }
+    delay(500);  // Attendre un court instant avant de redémarrer
+    ESP.restart();
+    jsonResponse = "{\"message\": \"Rebooting...\"}";
+  } else if (request == ROUTE_WIFI_STATUS) {
+    jsonResponse = wifiManager.toJSON();
+  } else if (request.startsWith(ROUTE_WIFI_CONFIG)) {
+    String token = request.substring(12);
+    if (!verifyJWT(token)) {
+      return "{\"message\": \"Token invalide ou expiré\"}";
+    }
+    String newSsid = request.substring(12, request.lastIndexOf(" "));
+    String newPwd = request.substring(request.lastIndexOf(" "));
+    wifiManager.setWiFiCredentials(newSsid, newPwd);
+    jsonResponse = "{\"message\":\"WiFi configured successfully.\"}";
+  } else {
+    jsonResponse = "{\"error\": \"Invalid request\"}";
+  }
+  return jsonResponse;
+}
+
 // Setup du serveur
 void setup() {
   Serial.begin(SERIAL_BAUD);
-  while(Serial);
+  while (Serial)
+    ;
   Serial.println("Intialisation...");
+
   // Charger le certificat CA
   //secureClient.setCACert(root_ca);
   // Initialisation WiFi
@@ -176,7 +238,7 @@ void setup() {
   // Initialisation EEprom
   eepromSensor.begin();
   // Initialisation Manager batterie
-  battSensor.begin();
+  //battSensor.begin();
 
   configTime(0, 0, "pool.ntp.org", "time.nist.gov");
   delay(2000);  // Attente pour la synchronisation initiale
@@ -184,7 +246,7 @@ void setup() {
 
   Serial.println("Déclaration des routes API...");
   // Route pour obtenir un jeton JWT (authentification par exemple)
-  server.on("/auth", HTTP_POST, [](AsyncWebServerRequest *request) {
+  server.on(ROUTE_AUTH, HTTP_GET, [](AsyncWebServerRequest *request) {
     String username = "";
     if (request->hasParam("username", true)) {
       username = request->getParam("username", true)->value();
@@ -192,50 +254,31 @@ void setup() {
       request->send(400, "application/json", "{\"message\":\"Nom d'utilisateur manquant\"}");
       return;
     }
-
-    // Générer un jeton pour l'utilisateur
-    String token = generateJWT(username);
-    StaticJsonDocument<200> doc;
-    doc["token"] = token;
-
-    String jsonResponse;
-    serializeJson(doc, jsonResponse);
-    request->send(200, "application/json", jsonResponse);
+    request->send(200, "application/json", processRequest(ROUTE_AUTH " " + username));
   });
 
   // Route GET pour obtenir les données JSON du detecteur de nuages
-  server.on("/CloudCover", HTTP_GET, [](AsyncWebServerRequest *request) {
-      Serial.println("Requete CloudCover...");
-      String jsonResponse = mlxSensor.toJSON();  // Appelle automatiquement getTimestamp()
-      request->send(200, "application/json", jsonResponse);
+  server.on(ROUTE_CLOUD_COVER, HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "application/json", processRequest(ROUTE_CLOUD_COVER));
   });
 
   // Route GET pour obtenir les données JSON du BME280
-  server.on("/Weather", HTTP_GET, [](AsyncWebServerRequest *request) {
-    Serial.println("Requete Weather...");
-    String jsonResponse = bmeSensor.toJSON(mlxSensor.getAmbientTemp(), eepromSensor.getTempCalOffset());  // Appelle automatiquement getTimestamp()
-    request->send(200, "application/json", jsonResponse);
+  server.on(ROUTE_WEATHER, HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "application/json", processRequest(ROUTE_WEATHER));
   });
 
-  server.on("/SkyBrightness", HTTP_GET, [](AsyncWebServerRequest *request) {
-    Serial.println("Requete SkyBrightness...");
-    tslSensor.setCalibrationTemperature(bmeSensor.getTemperature(mlxSensor.getAmbientTemp(), eepromSensor.getTempCalOffset()));
-    String jsonResponse = tslSensor.toJSON();  // Appelle automatiquement getTimestamp()
-    request->send(200, "application/json", jsonResponse);
-  });
-
-  // Route GET pour obtenir les données EEPROM
-  server.on("/CalibrationDatas", HTTP_GET, [](AsyncWebServerRequest *request) {
-    Serial.println("Requete CalibrationDatas...");
-    String jsonResponse = eepromSensor.toJSON();
-    request->send(200, "application/json", jsonResponse);
+  server.on(ROUTE_SKY_BRIGHTNESS, HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "application/json", processRequest(ROUTE_SKY_BRIGHTNESS));
   });
 
   // Route GET pour obtenir les données JSON du MAX17048
-  server.on("/Battery", HTTP_GET, [](AsyncWebServerRequest *request) {
-    Serial.println("Requete Battery...");
-    String jsonResponse = battSensor.toJSON();  // Appelle automatiquement getTimestamp()
-    request->send(200, "application/json", jsonResponse);
+  /*server.on(ROUTE_BATTERY, HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "application/json", processRequest(ROUTE_BATTERY));
+  });*/
+
+  // Route GET pour obtenir les données EEPROM
+  server.on(ROUTE_CALIBRATION_DATAS, HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "application/json", processRequest(ROUTE_CALIBRATION_DATAS));
   });
 
   // Route POST pour mettre à jour les données EEPROM
@@ -292,9 +335,7 @@ void setup() {
   });
 
   // Route POST pour redémarrer l'ESP32
-  server.on("/reboot", HTTP_POST, [](AsyncWebServerRequest *request) {
-    Serial.println("Requete Reboot...");
-
+  server.on(ROUTE_REBOOT, HTTP_POST, [](AsyncWebServerRequest *request) {
     if (!request->hasHeader("Authorization")) {
       request->send(401, "application/json", "{\"message\":\"Missing Token\"}");
       return;
@@ -303,27 +344,24 @@ void setup() {
     // Récupérer le token dans l'en-tête Authorization
     String token = request->header("Authorization");
     token.replace("Bearer ", "");  // Supprimer le préfixe "Bearer "
-
-    // Vérification du token
-    if (!verifyJWT(token)) {
-      request->send(403, "application/json", "{\"message\":\"Invalid or expired Token\"}");
-      return;
-    }
-    request->send(200, "application/json", "{\"message\":\"Rebooting...\"}");
-    delay(500);     // Attendre un court instant avant de redémarrer
-    ESP.restart();  // Redémarrage forcé
+    request->send(200, "application/json", processRequest(ROUTE_REBOOT " " + token));
   });
 
   // Route GET pour obtenir l'état WiFi
-  server.on("/wifi/status", HTTP_GET, [](AsyncWebServerRequest *request) {
-    Serial.println("Requete wifi/status...");
-    String jsonResponse = wifiManager.toJSON();
-    request->send(200, "application/json", jsonResponse);
+  server.on(ROUTE_WIFI_STATUS, HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "application/json", processRequest(ROUTE_WIFI_STATUS));
   });
 
   // Route POST pour configurer un WiFi
-  server.on("/wifi/config", HTTP_POST, [](AsyncWebServerRequest *request) {
-    Serial.println("Requete wifi/config...");
+  server.on(ROUTE_WIFI_CONFIG, HTTP_POST, [](AsyncWebServerRequest *request) {
+    if (!request->hasHeader("Authorization")) {
+      request->send(401, "application/json", "{\"message\":\"Missing Token\"}");
+      return;
+    }
+
+    // Récupérer le token dans l'en-tête Authorization
+    String token = request->header("Authorization");
+    token.replace("Bearer ", "");  // Supprimer le préfixe "Bearer "
 
     String body = "";
     if (request->hasParam("body", true)) {
@@ -341,34 +379,24 @@ void setup() {
     }
 
     if (doc.containsKey("ssid") && doc.containsKey("password")) {
-      wifiManager.setWiFiCredentials(doc["ssid"], doc["password"]);
-      request->send(200, "application/json", "{\"message\":\"WiFi configured successfully.\"}");
+      request->send(200, "application/json", processRequest(ROUTE_WIFI_CONFIG " " + token + " " + doc["ssid"].as<String>() + " " + doc["password"].as<String>()));
     } else {
       request->send(400, "text/plain", "Missing Wifi Parameters!");
     }
   });
 
-  server.on("/device/status", HTTP_GET, [&](AsyncWebServerRequest *request) {
-    Serial.println("Requete device/status...");
-
-    StaticJsonDocument<500> response;
-    response["deviceName"] = "HRO SQM Meter v" + String(Version);
-    response["deviceID"] = wifiManager.getUniqueID();  // Identifiant unique
-    response["wifiStatus"] = WiFi.status() == WL_CONNECTED ? "Connected" : "Disconnected";
-
-    // Ajouter les statuts des capteurs
-    StaticJsonDocument<400> sensors = getSensorsStatus(bmeSensor, tslSensor, mlxSensor, battSensor);
-    response["sensors"] = sensors;
-
-    String jsonResponse;
-    serializeJson(response, jsonResponse);
-    request->send(200, "application/json", jsonResponse);
+  server.on(ROUTE_IDENTIFICATION, HTTP_GET, [&](AsyncWebServerRequest *request) {
+    request->send(200, "application/json", processRequest(ROUTE_IDENTIFICATION));
   });
+
   Serial.println("Routes API déclarées...Démarrage serveur");
   // Démarrer le serveur
   server.begin();
 }
 
 void loop() {
-  // Rien ici, tout est asynchrone
+  if (Serial.available()) {
+    String request = Serial.readStringUntil('\n');
+    Serial.println(processRequest(request));  // Utilisation de la méthode centrale
+  }
 }

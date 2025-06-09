@@ -14,6 +14,7 @@ private:
 
     const char* dflt_ssid = WIFI_DEFAULT_SSID;
     const char* dflt_password = WIFI_DEFAULT_PASS;
+
     void startAccessPoint(); // Démarrer en mode AP
     void connectToWiFi(); // Connexion au WiFi configuré
     void connectToDefaultWiFi(); // Connexion au WiFi par defaut
